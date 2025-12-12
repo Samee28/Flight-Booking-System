@@ -29,11 +29,14 @@ model Flight {
   route       Route     @relation(fields: [routeId], references: [id])
   aircraftId  Int
   aircraft    Aircraft  @relation(fields: [aircraftId], references: [id])
+  airline     String    @default("Air India")
   departureAt DateTime
   arrivalAt   DateTime
   basePrice   Int
+  currentPrice Int?
   seats       Seat[]
   bookings    Booking[]
+  attempts    BookingAttempt[]
   status      String    @default("SCHEDULED")
   createdAt   DateTime  @default(now())
 }
@@ -60,10 +63,12 @@ model Passenger {
   lastName  String
   email     String    @unique
   bookings  Booking[]
+  wallet    Wallet?
 }
 
 model Booking {
   id          Int       @id @default(autoincrement())
+  pnr         String    @unique
   flightId    Int
   flight      Flight    @relation(fields: [flightId], references: [id])
   seatId      Int
@@ -88,9 +93,37 @@ model Hold {
 model Payment {
   id        Int       @id @default(autoincrement())
   amount    Int
-  currency  String    @default("USD")
+  currency  String    @default("INR")
   status    String    @default("AUTHORIZED")
   provider  String    @default("MOCK")
   createdAt DateTime  @default(now())
   bookings  Booking[]
+}
+
+model Wallet {
+  id          Int       @id @default(autoincrement())
+  passengerId Int       @unique
+  passenger   Passenger @relation(fields: [passengerId], references: [id])
+  balance     Int       @default(50000)
+  transactions Transaction[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  walletId  Int
+  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  amount    Int
+  type      String
+  description String
+  createdAt DateTime @default(now())
+}
+
+model BookingAttempt {
+  id        Int      @id @default(autoincrement())
+  flightId  Int
+  flight    Flight   @relation(fields: [flightId], references: [id])
+  userId    String
+  attemptAt DateTime @default(now())
 }

@@ -1,6 +1,6 @@
 # ✈️ Flight Booking System
 
-A modern, full-featured flight booking application built with **Next.js 14**, **TypeScript**, **Prisma ORM**, and **SQLite**. Features include real-time flight search, visual seat selection, booking management, and mock payment processing.
+A modern, full-featured flight booking application built with **Next.js 14**, **TypeScript**, **Prisma**, and **SQLite**. It includes real-time flight search, visual seat selection, wallet payments, dynamic pricing, PDF tickets, and booking history.
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)
@@ -10,35 +10,33 @@ A modern, full-featured flight booking application built with **Next.js 14**, **
 ## ✨ Features
 
 ### Core Functionality
-- **Flight Search** - Search flights by origin, destination, and date
-- **Visual Seat Selection** - Interactive seat map with real-time availability
-- **Seat Classes** - Business and Economy class seating
-- **Real-time Availability** - See booked, held, and available seats instantly
-- **Booking Management** - Create, view, and cancel bookings
-- **Passenger Management** - Automatic passenger profile creation
-- **Payment Processing** - Mock payment gateway integration
-- **Responsive Design** - Works seamlessly on desktop and mobile
+- **Flight Search** – Search by origin/destination/date with 10 results guaranteed (fills from schedule if fewer matches)
+- **Visual Seat Selection** – Interactive seat map with booked/held/available states
+- **Wallet & Payments** – ₹50,000 starter wallet, balance checks, transactions, and mock payment capture
+- **Dynamic Pricing** – 10% surge after repeated attempts within 5 minutes; resets after 10 minutes
+- **Bookings** – Create, view, cancel; automatic PNR generation and seat release on cancel
+- **PDF Tickets** – Downloadable tickets via jsPDF from booking history
+- **Responsive UI** – Modern layout tuned for desktop and mobile
 
 ### User Experience
-- 🎨 **Modern UI** - Clean, professional interface with smooth animations
-- 📱 **Mobile Responsive** - Optimized for all screen sizes
-- ⚡ **Fast Performance** - Server-side rendering with Next.js App Router
-- 🔄 **Real-time Updates** - Dynamic seat availability and booking status
-- ✅ **Form Validation** - Client and server-side validation with Zod
+- 🎨 Modern UI with clean cards and badges
+- 📱 Mobile-ready forms, cards, and seat map
+- ⚡ Fast SSR with Next.js App Router
+- ✅ Request validation with Zod and guarded server routes
 
 ## 🚀 Tech Stack
 
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript
-- **Backend**: Next.js API Routes
-- **Database**: SQLite with Prisma ORM
-- **Styling**: Custom CSS with CSS variables
-- **Validation**: Zod schema validation
-- **Type Safety**: Full TypeScript coverage
+- **Backend**: Next.js API routes (Edge-like handlers)
+- **Database**: SQLite + Prisma ORM
+- **Styling**: Custom CSS
+- **PDF**: jsPDF ticket generator
+- **Validation**: Zod
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 18 or 20 (Node 22 is not supported by Next 14)
+- npm
 
 ## 🛠️ Installation & Setup
 
@@ -55,13 +53,10 @@ npm install
 
 ### 3. Set up the database
 ```powershell
-# Generate Prisma Client
-npx prisma generate
+# Apply migrations (uses bundled migrations)
+npx prisma migrate dev
 
-# Run database migrations
-npx prisma migrate dev --name init
-
-# Seed the database with sample data
+# Seed the database with sample data (routes, flights, seats, wallet)
 npm run db:seed
 ```
 
@@ -86,40 +81,44 @@ Flight Booking System/
 │   │   ├── page.tsx           # Home page
 │   │   ├── globals.css        # Global styles
 │   │   ├── search/
-│   │   │   └── page.tsx       # Flight search & booking flow
+│   │   │   └── page.tsx       # Flight search, seat selection, booking flow
 │   │   ├── bookings/
-│   │   │   └── page.tsx       # Booking management
+│   │   │   └── page.tsx       # Booking history, cancellations, PDF tickets
 │   │   └── api/
 │   │       ├── search/        # Flight search API
 │   │       ├── seats/         # Seat availability API
 │   │       ├── bookings/      # Booking CRUD API
 │   │       ├── holds/         # Seat hold API
-│   │       └── payments/      # Payment processing API
+│   │       ├── wallet/        # Wallet balance + top-up API
+│   │       ├── pricing/       # Dynamic pricing attempts API
+│   │       └── payments/      # Payment processing API (mock)
 │   └── lib/
-│       └── prisma.ts          # Prisma client singleton
+│       ├── prisma.ts          # Prisma client singleton
+│       └── pdfGenerator.ts    # jsPDF ticket generator
 ├── package.json
 ├── tsconfig.json
 ├── next.config.js
 └── README.md
 ```
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema (high level)
 
-### Models
-- **Route** - Flight routes (origin → destination)
-- **Aircraft** - Aircraft types and configurations
-- **Flight** - Scheduled flights with pricing
-- **Seat** - Individual seats with class and status
-- **Passenger** - Passenger profiles
-- **Booking** - Booking records with status
-- **Hold** - Temporary seat holds with expiry
-- **Payment** - Payment transactions
+- **Route** – flight routes (origin → destination)
+- **Aircraft** – aircraft types
+- **Flight** – scheduled flights with base/current price and airline
+- **Seat** – per-flight seats with class and state (booked/held)
+- **Passenger** – passenger profile with wallet
+- **Wallet** – balance + transactions
+- **Booking** – booking with PNR, price, status
+- **Hold** – temporary seat holds
+- **Payment** – mock payment records
+- **BookingAttempt** – tracks attempts for surge pricing
 
 ## 🔌 API Endpoints
 
 ### Search Flights
 ```http
-GET /api/search?origin=NYC&destination=SFO&date=2025-12-15
+GET /api/search?origin=DELHI&destination=MUMBAI&date=2025-12-13
 ```
 
 ### Get Seats for Flight
@@ -140,6 +139,22 @@ Content-Type: application/json
     "lastName": "Doe",
     "email": "john@example.com"
   }
+}
+```
+
+### Wallet
+```http
+GET /api/wallet?email=jane@example.com   # fetch balance
+POST /api/wallet                         # top-up (if enabled)
+```
+
+### Dynamic Pricing (attempt tracking)
+```http
+POST /api/pricing
+Content-Type: application/json
+{
+  "flightId": 1,
+  "userId": "jane@example.com"
 }
 ```
 
@@ -185,15 +200,16 @@ Content-Type: application/json
 5. Select an available seat from the seat map
 6. Click **Continue to Booking**
 7. Enter passenger details (first name, last name, email)
-8. Click **Confirm Booking**
-9. Receive confirmation and redirect to bookings
+8. Review wallet balance and surge price (if any)
+9. Click **Confirm Booking**
+10. Receive confirmation (PNR) and redirect to bookings
 
 ### Managing Bookings
 1. Navigate to **My Bookings**
 2. View all your bookings with details
 3. Click **Cancel Booking** to cancel (if status is CONFIRMED)
 4. Confirmation dialog appears
-5. Booking status updates to CANCELED and seat is released
+5. Booking status updates to CANCELED, seat is released, wallet is refunded
 
 ## 🎨 UI Components
 
@@ -221,31 +237,27 @@ Content-Type: application/json
 - Booking status badge
 - Cancel button (if applicable)
 
-## 🧪 Testing
-
-Sample test flow in PowerShell:
+## 🧪 Quick Smoke Tests (PowerShell)
 
 ```powershell
-# Search for flights
-Invoke-WebRequest -Uri "http://localhost:3000/api/search?origin=NYC&destination=SFO" -Method GET
+# Search (returns up to 10 flights)
+Invoke-WebRequest -Uri "http://localhost:3000/api/search?origin=DELHI&destination=MUMBAI&date=2025-12-13" -Method GET
 
-# Get seats for flight ID 1
+# Seats for a flight
 Invoke-WebRequest -Uri "http://localhost:3000/api/seats?flightId=1" -Method GET
 
-# Create a booking
-$body = @{
-  flightId = 1
-  seatId = 5
-  passenger = @{
-    firstName = "Jane"
-    lastName = "Smith"
-    email = "jane@example.com"
-  }
-} | ConvertTo-Json
+# Pricing attempt (surge tracking)
+$pricing = @{ flightId = 1; userId = "demo@example.com" } | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:3000/api/pricing" -Method POST -ContentType "application/json" -Body $pricing
 
+# Wallet
+Invoke-WebRequest -Uri "http://localhost:3000/api/wallet?email=demo@example.com" -Method GET
+
+# Create booking
+$body = @{ flightId = 1; seatId = 5; passenger = @{ firstName = "Demo"; lastName = "User"; email = "demo@example.com" } } | ConvertTo-Json
 Invoke-WebRequest -Uri "http://localhost:3000/api/bookings" -Method POST -ContentType "application/json" -Body $body
 
-# Cancel booking ID 1
+# Cancel booking
 Invoke-WebRequest -Uri "http://localhost:3000/api/bookings?id=1" -Method DELETE
 ```
 
@@ -261,13 +273,14 @@ npm run db:generate  # Generate Prisma Client
 npm run db:seed      # Seed database with sample data
 ```
 
-## 🌱 Sample Data
+## 🌱 Sample Data (seed)
 
 The seed script creates:
-- **4 routes**: NYC↔SFO, NYC→LAX, LAX→MIA
-- **3 aircraft**: Airbus A320, Boeing 737, Airbus A350
-- **6 flights**: Scheduled over the next 6 days
-- **144 seats**: 24 seats per flight (6 rows × 4 seats)
+- **12 routes**: Indian metro pairs (e.g., DELHI↔MUMBAI, DELHI→BANGALORE, MUMBAI→KOLKATA, etc.)
+- **4 aircraft**: A320, B737, A350, B787
+- **20 flights**: Spread across upcoming days, base prices ₹2000–₹3000
+- **Seats**: 24 per flight (6 rows × 4 seats), Business and Economy
+- **Wallet**: Auto-creates passenger wallet with ₹50,000 on first booking
 
 ## 🔐 Environment Variables
 

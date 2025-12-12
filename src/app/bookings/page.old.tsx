@@ -1,20 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import { generateTicketPDF } from "@/lib/pdfGenerator";
 
 interface Booking {
   id: number;
-  pnr: string;
   status: string;
   price: number;
   createdAt: string;
   flight: {
-    id: number;
-    airline: string;
     route: { origin: string; destination: string };
     departureAt: string;
     arrivalAt: string;
-    aircraft: { name: string };
   };
   seat: { seatNumber: string; class: string };
   passenger: { firstName: string; lastName: string; email: string };
@@ -38,12 +33,12 @@ export default function BookingsPage() {
   }
 
   async function cancelBooking(id: number) {
-    if (!confirm('Are you sure you want to cancel this booking? Amount will be refunded to your wallet.')) return;
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
       const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setMessage({ type: 'success', text: 'Booking cancelled successfully. Amount refunded to wallet.' });
+        setMessage({ type: 'success', text: 'Booking cancelled successfully' });
         loadBookings();
       } else {
         setMessage({ type: 'error', text: 'Failed to cancel booking' });
@@ -51,22 +46,6 @@ export default function BookingsPage() {
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to cancel booking' });
     }
-  }
-
-  function downloadTicket(booking: Booking) {
-    generateTicketPDF({
-      pnr: booking.pnr,
-      passengerName: `${booking.passenger.firstName} ${booking.passenger.lastName}`,
-      airline: booking.flight.airline,
-      flightId: booking.flight.id,
-      route: `${booking.flight.route.origin} → ${booking.flight.route.destination}`,
-      seatNumber: booking.seat.seatNumber,
-      seatClass: booking.seat.class,
-      price: booking.price,
-      bookingDate: new Date(booking.createdAt).toLocaleString('en-IN'),
-      departureTime: new Date(booking.flight.departureAt).toLocaleString('en-IN'),
-      arrivalTime: new Date(booking.flight.arrivalAt).toLocaleString('en-IN')
-    });
   }
 
   useEffect(() => {
@@ -101,14 +80,9 @@ export default function BookingsPage() {
           {bookings.map(booking => (
             <div key={booking.id} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>
-                    {booking.flight.route.origin} → {booking.flight.route.destination}
-                  </h3>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                    {booking.flight.airline}
-                  </div>
-                </div>
+                <h3 style={{ margin: 0 }}>
+                  {booking.flight.route.origin} → {booking.flight.route.destination}
+                </h3>
                 <span className={`badge ${
                   booking.status === 'CONFIRMED' ? 'badge-success' : 
                   booking.status === 'CANCELED' ? 'badge-danger' : 'badge-info'
@@ -117,11 +91,7 @@ export default function BookingsPage() {
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gap: '0.75rem', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#2563eb' }}>PNR: {booking.pnr}</div>
-                </div>
-
+              <div style={{ display: 'grid', gap: '0.75rem', fontSize: '0.875rem' }}>
                 <div>
                   <div style={{ color: '#6b7280' }}>Passenger</div>
                   <div style={{ fontWeight: 600 }}>
@@ -134,60 +104,45 @@ export default function BookingsPage() {
                   <div>
                     <div style={{ color: '#6b7280' }}>Departure</div>
                     <div style={{ fontWeight: 600 }}>
-                      {new Date(booking.flight.departureAt).toLocaleString('en-IN')}
+                      {new Date(booking.flight.departureAt).toLocaleString()}
                     </div>
                   </div>
                   <div>
                     <div style={{ color: '#6b7280' }}>Arrival</div>
                     <div style={{ fontWeight: 600 }}>
-                      {new Date(booking.flight.arrivalAt).toLocaleString('en-IN')}
+                      {new Date(booking.flight.arrivalAt).toLocaleString()}
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                   <div>
                     <div style={{ color: '#6b7280' }}>Seat</div>
                     <div style={{ fontWeight: 600 }}>
-                      {booking.seat.seatNumber}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#6b7280' }}>Class</div>
-                    <div style={{ fontWeight: 600 }}>
-                      {booking.seat.class}
+                      {booking.seat.seatNumber} ({booking.seat.class})
                     </div>
                   </div>
                   <div>
                     <div style={{ color: '#6b7280' }}>Price</div>
-                    <div style={{ fontWeight: 600, color: '#2563eb' }}>₹{booking.price.toLocaleString('en-IN')}</div>
+                    <div style={{ fontWeight: 600, color: '#2563eb' }}>${booking.price}</div>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ color: '#6b7280' }}>Booked On</div>
-                  <div>{new Date(booking.createdAt).toLocaleString('en-IN')}</div>
+                  <div style={{ color: '#6b7280' }}>Booked</div>
+                  <div>{new Date(booking.createdAt).toLocaleString()}</div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              {booking.status === 'CONFIRMED' && (
                 <button
-                  className="button button-secondary"
-                  onClick={() => downloadTicket(booking)}
-                  style={{ width: '100%' }}
+                  className="button button-danger"
+                  onClick={() => cancelBooking(booking.id)}
+                  style={{ width: '100%', marginTop: '1rem' }}
                 >
-                  📄 Download Ticket
+                  Cancel Booking
                 </button>
-                {booking.status === 'CONFIRMED' && (
-                  <button
-                    className="button button-danger"
-                    onClick={() => cancelBooking(booking.id)}
-                    style={{ width: '100%' }}
-                  >
-                    Cancel Booking
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           ))}
         </div>

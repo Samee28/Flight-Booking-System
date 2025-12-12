@@ -11,19 +11,12 @@ interface Seat {
 
 interface Flight {
   id: number;
-  airline: string;
   departureAt: string;
   arrivalAt: string;
   basePrice: number;
-  currentPrice?: number;
   route: { origin: string; destination: string };
   aircraft: { name: string };
   seats?: Seat[];
-}
-
-interface WalletInfo {
-  balance: number;
-  transactions: any[];
 }
 
 export default function SearchPage() {
@@ -39,9 +32,7 @@ export default function SearchPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [pricingInfo, setPricingInfo] = useState<any>(null);
 
   async function search() {
     setLoading(true);
@@ -67,35 +58,10 @@ export default function SearchPage() {
       const res = await fetch(`/api/seats?flightId=${flight.id}`);
       const data = await res.json();
       setSeats(data.seats ?? []);
-
-      // Track pricing attempt
-      if (email) {
-        const priceRes = await fetch('/api/pricing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ flightId: flight.id, userId: email })
-        });
-        const priceData = await priceRes.json();
-        setPricingInfo(priceData);
-        if (priceData.surgeApplied) {
-          setMessage({ type: 'error', text: priceData.message });
-        }
-      }
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to load seats' });
     }
     setLoading(false);
-  }
-
-  async function loadWallet() {
-    if (!email) return;
-    try {
-      const res = await fetch(`/api/wallet?email=${email}`);
-      const data = await res.json();
-      setWallet(data);
-    } catch (error) {
-      console.error('Failed to load wallet');
-    }
   }
 
   async function handleBooking() {
@@ -117,23 +83,16 @@ export default function SearchPage() {
       const data = await res.json();
       
       if (res.ok) {
-        setMessage({ type: 'success', text: `✅ Booking confirmed! PNR: ${data.booking.pnr}. Redirecting...` });
+        setMessage({ type: 'success', text: '✅ Booking confirmed! Redirecting to bookings...' });
         setTimeout(() => window.location.href = '/bookings', 2000);
       } else {
-        const errorMsg = data.error?.shortfall 
-          ? `Insufficient balance! Need ₹${data.error.shortfall} more. Available: ₹${data.error.available}, Required: ₹${data.error.required}`
-          : (typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
-        setMessage({ type: 'error', text: errorMsg });
+        setMessage({ type: 'error', text: data.error || 'Booking failed' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to create booking' });
     }
     setLoading(false);
   }
-
-  useEffect(() => {
-    if (email) loadWallet();
-  }, [email]);
 
   const groupedSeats = seats.reduce((acc, seat) => {
     const row = seat.seatNumber.substring(0, seat.seatNumber.length - 1);
@@ -142,19 +101,9 @@ export default function SearchPage() {
     return acc;
   }, {} as Record<string, Seat[]>);
 
-  const currentPrice = pricingInfo?.currentPrice || selected?.currentPrice || selected?.basePrice || 0;
-
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Search Flights</h1>
-        {wallet && (
-          <div className="card" style={{ padding: '0.75rem 1.5rem', margin: 0 }}>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Wallet Balance</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>₹{wallet.balance.toLocaleString('en-IN')}</div>
-          </div>
-        )}
-      </div>
+      <h1 style={{ marginBottom: '2rem' }}>Search Flights</h1>
 
       {/* Search Form */}
       {bookingStep === 'search' && (
@@ -162,13 +111,13 @@ export default function SearchPage() {
           <div className="search-form">
             <input
               className="input"
-              placeholder="Origin (e.g., DELHI)"
+              placeholder="Origin (e.g., NYC)"
               value={origin}
               onChange={e => setOrigin(e.target.value.toUpperCase())}
             />
             <input
               className="input"
-              placeholder="Destination (e.g., MUMBAI)"
+              placeholder="Destination (e.g., SFO)"
               value={destination}
               onChange={e => setDestination(e.target.value.toUpperCase())}
             />
@@ -202,24 +151,19 @@ export default function SearchPage() {
               onClick={() => selectFlight(flight)}
             >
               <div className="flight-header">
-                <div>
-                  <div className="route">
-                    {flight.route.origin} → {flight.route.destination}
-                  </div>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                    {flight.airline}
-                  </div>
+                <div className="route">
+                  {flight.route.origin} → {flight.route.destination}
                 </div>
-                <div className="price">₹{(flight.currentPrice || flight.basePrice).toLocaleString('en-IN')}</div>
+                <div className="price">${flight.basePrice}</div>
               </div>
               <div className="flight-details">
                 <div>
                   <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Departure</div>
-                  <div style={{ fontWeight: 600 }}>{new Date(flight.departureAt).toLocaleString('en-IN')}</div>
+                  <div style={{ fontWeight: 600 }}>{new Date(flight.departureAt).toLocaleString()}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Arrival</div>
-                  <div style={{ fontWeight: 600 }}>{new Date(flight.arrivalAt).toLocaleString('en-IN')}</div>
+                  <div style={{ fontWeight: 600 }}>{new Date(flight.arrivalAt).toLocaleString()}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Aircraft</div>
@@ -236,7 +180,7 @@ export default function SearchPage() {
         <div>
           <button
             className="button button-outline"
-            onClick={() => { setBookingStep('search'); setSelected(null); setSelectedSeat(null); setPricingInfo(null); }}
+            onClick={() => { setBookingStep('search'); setSelected(null); setSelectedSeat(null); }}
             style={{ marginBottom: '1rem' }}
           >
             ← Back to Search
@@ -244,19 +188,8 @@ export default function SearchPage() {
           
           <div className="card">
             <h2>Select Your Seat</h2>
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontWeight: 600 }}>{selected.airline}</div>
-              <div style={{ color: '#6b7280' }}>
-                {selected.route.origin} → {selected.route.destination} | {selected.aircraft.name}
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2563eb', marginTop: '0.5rem' }}>
-                ₹{currentPrice.toLocaleString('en-IN')}
-                {pricingInfo?.surgeApplied && (
-                  <span className="badge badge-warning" style={{ marginLeft: '0.5rem', fontSize: '0.75rem' }}>
-                    +10% Surge
-                  </span>
-                )}
-              </div>
+            <div style={{ textAlign: 'center', marginBottom: '1rem', color: '#6b7280' }}>
+              {selected.route.origin} → {selected.route.destination} | {selected.aircraft.name}
             </div>
 
             <div className="legend">
@@ -329,20 +262,11 @@ export default function SearchPage() {
             <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
               <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Booking Summary</div>
               <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                <strong>{selected.airline}</strong><br />
                 Flight: {selected.route.origin} → {selected.route.destination}<br />
                 Seat: {selectedSeat.seatNumber} ({selectedSeat.class})<br />
-                <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#2563eb', marginTop: '0.5rem' }}>
-                  Total: ₹{currentPrice.toLocaleString('en-IN')}
-                </div>
+                Price: ${selected.basePrice}
               </div>
             </div>
-
-            {wallet && wallet.balance < currentPrice && (
-              <div className="alert alert-error">
-                Insufficient wallet balance! You need ₹{(currentPrice - wallet.balance).toLocaleString('en-IN')} more.
-              </div>
-            )}
 
             <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
               <input
@@ -363,17 +287,16 @@ export default function SearchPage() {
                 placeholder="Email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                onBlur={loadWallet}
               />
             </div>
 
             <button
               className="button button-secondary"
               onClick={handleBooking}
-              disabled={loading || !firstName || !lastName || !email || (wallet && wallet.balance < currentPrice)}
+              disabled={loading || !firstName || !lastName || !email}
               style={{ width: '100%' }}
             >
-              {loading ? 'Processing...' : `✓ Confirm Booking (₹${currentPrice.toLocaleString('en-IN')})`}
+              {loading ? 'Processing...' : '✓ Confirm Booking'}
             </button>
           </div>
         </div>

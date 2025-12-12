@@ -2,6 +2,9 @@
   "name": "flight-booking-system",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.17 <21"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -18,7 +21,8 @@
     "next": "14.2.11",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "zod": "3.23.8"
+    "zod": "3.23.8",
+    "jspdf": "2.5.2"
   },
   "devDependencies": {
     "@types/node": "25.0.1",
