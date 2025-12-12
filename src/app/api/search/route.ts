@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
   const start = date ? new Date(date) : undefined;
   const end = start ? new Date(start) : undefined;
-  if (end) end.setHours(23,59,59,999);
+  if (end) end.setHours(23, 59, 59, 999);
 
   const flights = await prisma.flight.findMany({
     where: {
@@ -20,7 +20,11 @@ export async function GET(req: NextRequest) {
       ...(start && end ? { departureAt: { gte: start, lte: end } } : {}),
       status: "SCHEDULED",
     },
-    include: { route: true }
+    include: {
+      route: true,
+      aircraft: true
+    },
+    orderBy: { departureAt: 'asc' }
   });
 
   return Response.json({ flights });

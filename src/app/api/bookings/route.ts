@@ -48,3 +48,20 @@ export async function GET() {
   const bookings = await prisma.booking.findMany({ include: { flight: true, seat: true, passenger: true } });
   return Response.json({ bookings });
 }
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const idStr = searchParams.get("id");
+  const id = idStr ? Number(idStr) : NaN;
+  if (!id || Number.isNaN(id)) return new Response(JSON.stringify({ error: "Invalid id" }), { status: 400 });
+
+  const booking = await prisma.booking.findUnique({ where: { id }, include: { seat: true } });
+  if (!booking) return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.update({ where: { id }, data: { status: "CANCELED" } });
+    await tx.seat.update({ where: { id: booking.seatId }, data: { isBooked: false } });
+  });
+
+  return new Response(null, { status: 204 });
+}

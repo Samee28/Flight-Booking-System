@@ -1,12 +1,27 @@
-export const metadata = { title: "Flight Booking" };
+import Link from "next/link";
+import "./globals.css";
+
+export const metadata = { title: "Flight Booking System" };
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: 'system-ui', margin: 0 }}>
-        <header style={{ padding: 12, borderBottom: '1px solid #eee' }}>
-          <h1 style={{ margin: 0 }}>Flight Booking</h1>
+      <body>
+        <header className="header">
+          <div className="container">
+            <h1>✈️ Flight Booking System</h1>
+            <nav className="nav">
+              <Link href="/">Home</Link>
+              <Link href="/search">Search Flights</Link>
+              <Link href="/bookings">My Bookings</Link>
+            </nav>
+          </div>
         </header>
-        <main style={{ padding: 16 }}>{children}</main>
+        <main className="main">
+          <div className="container">
+            {children}
+          </div>
+        </main>
       </body>
     </html>
   );
