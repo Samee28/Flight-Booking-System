@@ -1,12 +1,12 @@
-# 🎉 Flight Booking System - Project Complete!
+#  Flight Booking System - Project Complete!
 
-## ✅ What Was Built
+##  What Was Built
 
 A **complete, production-ready flight booking system** with modern UI/UX and all core features implemented.
 
 ---
 
-## 🎨 User Interface
+## User Interface
 
 ### 1. **Home Page** (`/`)
 - Welcome hero section with gradient title
