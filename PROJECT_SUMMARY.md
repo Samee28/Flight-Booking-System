@@ -224,34 +224,6 @@ Open http://localhost:3000
 ✅ All code pushed to GitHub
 ✅ Ready to deploy
 
----
-
-## 🔗 Repository
-
-**GitHub**: https://github.com/Samee28/Flight-Booking-System
-
-Latest commit includes:
-- Complete UI overhaul
-- All API endpoints
-- Database migrations
-- Seed data
-- Full documentation
-
----
-
-## 🎓 What's Next?
-
-Potential enhancements:
-- Add authentication (NextAuth.js)
-- Integrate real payment gateway (Stripe)
-- Add email notifications
-- Implement seat hold expiry timer
-- Add flight filtering (price, time)
-- Multi-passenger bookings
-- Seat upgrade options
-- Booking history export
-- Admin dashboard
-- Real-time seat updates with WebSocket
 
 ---
 
@@ -270,4 +242,4 @@ All requirements have been fulfilled:
 
 **The app is running at http://localhost:3000**
 
-Enjoy! 🎉
+
