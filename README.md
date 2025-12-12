@@ -237,29 +237,7 @@ Content-Type: application/json
 - Booking status badge
 - Cancel button (if applicable)
 
-## 🧪 Quick Smoke Tests (PowerShell)
 
-```powershell
-# Search (returns up to 10 flights)
-Invoke-WebRequest -Uri "http://localhost:3000/api/search?origin=DELHI&destination=MUMBAI&date=2025-12-13" -Method GET
-
-# Seats for a flight
-Invoke-WebRequest -Uri "http://localhost:3000/api/seats?flightId=1" -Method GET
-
-# Pricing attempt (surge tracking)
-$pricing = @{ flightId = 1; userId = "demo@example.com" } | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:3000/api/pricing" -Method POST -ContentType "application/json" -Body $pricing
-
-# Wallet
-Invoke-WebRequest -Uri "http://localhost:3000/api/wallet?email=demo@example.com" -Method GET
-
-# Create booking
-$body = @{ flightId = 1; seatId = 5; passenger = @{ firstName = "Demo"; lastName = "User"; email = "demo@example.com" } } | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:3000/api/bookings" -Method POST -ContentType "application/json" -Body $body
-
-# Cancel booking
-Invoke-WebRequest -Uri "http://localhost:3000/api/bookings?id=1" -Method DELETE
-```
 
 ## 📝 Scripts
 
@@ -273,7 +251,7 @@ npm run db:generate  # Generate Prisma Client
 npm run db:seed      # Seed database with sample data
 ```
 
-## 🌱 Sample Data (seed)
+##  Sample Data (seed)
 
 The seed script creates:
 - **12 routes**: Indian metro pairs (e.g., DELHI↔MUMBAI, DELHI→BANGALORE, MUMBAI→KOLKATA, etc.)
@@ -290,33 +268,6 @@ For production, consider:
 - `DATABASE_URL` - PostgreSQL/MySQL connection string
 - `NODE_ENV=production`
 
-## 🚢 Deployment
-
-### Vercel (Recommended)
-1. Push to GitHub
-2. Import project in Vercel
-3. Add PostgreSQL database (Vercel Postgres)
-4. Update `DATABASE_URL` in environment variables
-5. Deploy
-
-### Other Platforms
-- Update database provider in `prisma/schema.prisma`
-- Run `npx prisma migrate deploy`
-- Set environment variables
-- Build with `npm run build`
-- Start with `npm run start`
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is open source and available under the MIT License.
 
 ## 👤 Author
 
@@ -324,7 +275,7 @@ This project is open source and available under the MIT License.
 - GitHub: [@Samee28](https://github.com/Samee28)
 - Repository: [Flight-Booking-System](https://github.com/Samee28/Flight-Booking-System)
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Next.js team for the amazing framework
 - Prisma team for the excellent ORM
@@ -332,4 +283,4 @@ This project is open source and available under the MIT License.
 
 ---
 
-Made with ❤️ using Next.js and TypeScript
+
