@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Route {
+  id        Int      @id @default(autoincrement())
+  origin    String
+  destination String
+  flights   Flight[]
+  createdAt DateTime @default(now())
+}
+
+model Aircraft {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  seats     Seat[]
+  flights   Flight[]
+}
+
+model Flight {
+  id          Int      @id @default(autoincrement())
+  routeId     Int
+  route       Route    @relation(fields: [routeId], references: [id])
+  aircraftId  Int
+  aircraft    Aircraft @relation(fields: [aircraftId], references: [id])
+  departureAt DateTime
+  arrivalAt   DateTime
+  basePrice   Int
+  seats       Seat[]
+  bookings    Booking[]
+  status      String   @default("SCHEDULED")
+  createdAt   DateTime @default(now())
+}
+
+model Seat {
+  id         Int    @id @default(autoincrement())
+  aircraftId Int
+  aircraft   Aircraft @relation(fields: [aircraftId], references: [id])
+  flightId   Int?
+  flight     Flight?  @relation(fields: [flightId], references: [id])
+  seatNumber String
+  class      String
+  isHeld     Boolean @default(false)
+  isBooked   Boolean @default(false)
+  holds      Hold[]
+  bookings   Booking[]
+  @@unique([flightId, seatNumber])
+}
+
+model Passenger {
+  id        Int    @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String  @unique
+  bookings  Booking[]
+}
+
+model Booking {
+  id          Int       @id @default(autoincrement())
+  flightId    Int
+  flight      Flight    @relation(fields: [flightId], references: [id])
+  seatId      Int
+  seat        Seat      @relation(fields: [seatId], references: [id])
+  passengerId Int
+  passenger   Passenger @relation(fields: [passengerId], references: [id])
+  price       Int
+  status      String    @default("CONFIRMED")
+  paymentId   Int?
+  payment     Payment?  @relation(fields: [paymentId], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+model Hold {
+  id        Int      @id @default(autoincrement())
+  seatId    Int
+  seat      Seat     @relation(fields: [seatId], references: [id])
+  expiresAt DateTime
+  active    Boolean  @default(true)
+}
+
+model Payment {
+  id         Int      @id @default(autoincrement())
+  amount     Int
+  currency   String   @default("USD")
+  status     String   @default("AUTHORIZED")
+  provider   String   @default("MOCK")
+  createdAt  DateTime @default(now())
+}
